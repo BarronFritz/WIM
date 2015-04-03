@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/004255-3d-glossy-blue-orb-icon-arrows-arrow-styled-left.png</file>
+        <file>icons/004256-3d-glossy-blue-orb-icon-arrows-arrow-styled-right.png</file>
+        <file>icons/004257-3d-glossy-blue-orb-icon-arrows-arrow-thick-down.png</file>
+        <file>icons/004260-3d-glossy-blue-orb-icon-arrows-arrow-thick-up.png</file>
+        <file>icons/004298-3d-glossy-blue-orb-icon-arrows-cut-arrow-up.png</file>
+        <file>icons/004317-3d-glossy-blue-orb-icon-arrows-last-arrow-right.png</file>
+        <file>icons/004346-3d-glossy-blue-orb-icon-arrows-two-ways-left-right.png</file>
+        <file>icons/004254-3d-glossy-blue-orb-icon-arrows-arrow-sparkle.png</file>
+        <file>icons/blue_up_arrow_105.jpg</file>
+        <file>icons/green_up_arrow.jpg</file>
+        <file>icons/red_down_arrow.jpg</file>
+    </qresource>
+</RCC>
