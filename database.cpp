@@ -57,10 +57,226 @@ bool local::preparedQuery(QSqlDatabase &db, QSqlQuery &query)
     }
 }
 
-bool initDatabase(QSqlDatabase &db) {
-    // All this function does is set Foreign Key restraints to active.
+bool setupDatabaseTables(QSqlDatabase &db)
+{
+    if (db.open()) {
+        QSqlQuery query;
+        // Login Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS login ( "
+                        "username VARCHAR PRIMARY KEY, "
+                        "password VARCHAR NOT NULL, "
+                        "salt VARCHAR, "
+                        "security INTEGER NOT NULL")) {
+            qDebug() << query.lastError().text();
+        }
+        // Warehouse Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS warehouse ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "code VARCHAR, "
+                        "name VARCHAR, "
+                        "address1 VARCHAR, "
+                        "address2 VARCHAR, "
+                        "city VARCHAR, "
+                        "state VARCHAR(2), "
+                        "zip VARCHAR(10), "
+                        "country VARCHAR(3) DEFAULT 'US'")) {
+            qDebug() << query.lastError().text();
+        }
+        // Bin Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS bin ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "slot VARCHAR, "
+                        "warehouse_id INTEGER NOT NULL,  "
+                        "FOREIGN KEY(warehouse_id) REFERENCES warehouse(id)  "
+                        "UNIQUE(slot,warehouse_id) ON CONFLICT ABORT)")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS product ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "warehouse_id INTEGER NOT NULL, "
+                        "bin_id INTEGER NOT NULL, "
+                        "kit_sku VARCHAR, "
+                        "quantity INTEGER, "
+                        "received DATE, "
+                        "packed DATE, "
+                        "expiration DATE, "
+                        "notes TEXT, "
+                        "modified DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+                        "modified_by VARCHAR NOT NULL DEFAULT 'System', "
+                        "FOREIGN KEY(warehouse_id) REFERENCES warehouse(id), "
+                        "FOREIGN KEY(bin_id) REFERENCES bin(id), "
+                        "FOREIGN KEY(kit_sku) REFERENCES kit(sku))")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product Log
+        if (!query.exec("CREATE TABLE IF NOT EXISTS product_log ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "type VARCHAR NOT NULL, "
+                        "changed_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+                        "product_id INTEGER, "
+                        "warehouse_id INTEGER, "
+                        "bin_id INTEGER, "
+                        "kit_sku VARCHAR, "
+                        "quantity INTEGER, "
+                        "received DATE, "
+                        "packed DATE, "
+                        "expiration DATE, "
+                        "notes VARCHAR, "
+                        "modified DATETIME, "
+                        "modified_by VARCHAR)" )){
+            qDebug() << query.lastError().text();
+        }
+        // Item Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS item ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "sku VARCHAR NOT NULL, "
+                        "description VARCHAR, "
+                        "UNIQUE (sku,description) ON CONFLICT ABORT)")) {
+            qDebug() << query.lastError().text();
+        }
+        // Kit Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS kit ( "
+                        "id INTEGER PRIMARY KEY NOT NULL, "
+                        "sku VARCHAR NOT NULL, "
+                        "description VARCHAR, "
+                        "item_id INTEGER, "
+                        "unit_id INTEGER, "
+                        "quantity INTEGER, "
+                        "CHECK (quantity>0 OR quantity IS NULL), "
+                        "FOREIGN KEY(item_id) REFERENCES item(id), "
+                        "FOREIGN KEY(unit_id) REFERENCES unit(id))")) {
+            qDebug() << query.lastError().text();
+        }
+        // Unit Table
+        if (!query.exec("CREATE TABLE IF NOT EXISTS unit ( "
+                        "id INTEGER PRIMARY KEY  NOT NULL , "
+                        "code VARCHAR NOT NULL, "
+                        "item_id INTEGER NOT NULL , "
+                        "quantity INTEGER NOT NULL, "
+                        "CHECK (quantity>0 OR quantity NOT NULL))")) {
+            qDebug() << query.lastError().text();
+        }
+        // Empty Slots View
+        if (!query.exec("CREATE VIEW IF NOT EXISTS empty_slots_view AS "
+                        "SELECT warehouse.code AS 'Warehouse', slot AS 'Slot' FROM bin "
+                        "JOIN warehouse ON bin.warehouse_id=warehouse.id "
+                        "WHERE bin.id NOT IN "
+                        "(SELECT bin_id FROM product) "
+                        "ORDER BY Slot, Warehouse")) {
+            qDebug() << query.lastError().text();
+        }
+        // Inventory View
+        if (!query.exec("CREATE VIEW IF NOT EXISTS inventory_view AS "
+                        "SELECT item.sku AS SKU, "
+                        "item.description AS Description, "
+                        "SUM(product.quantity*kit.quantity) AS Total, "
+                        "MIN(product.expiration) AS 'Oldest Expiration Date' FROM product "
+                        "JOIN kit ON product.kit_sku=kit.sku "
+                        "JOIN item ON kit.item_id=item.id "
+                        "GROUP BY item.sku"
+                        "ORDER BY item.sku")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product_Log View
+        if (!query.exec("CREATE VIEW IF NOT EXISTS product_log_view AS "
+                        "SELECT  "
+                        "product_log.id, "
+                        "product_log.type, "
+                        "product_log.changed_on, "
+                        "product_log.product_id, "
+                        "product_log.warehouse_id, "
+                        "(SELECT code FROM warehouse WHERE id=warehouse_id), "
+                        "product_log.bin_id, "
+                        "(SELECT slot FROM bin WHERE id=bin_id), "
+                        "product_log.kit_sku, "
+                        "(SELECT description FROM kit WHERE sku=kit_sku), "
+                        "product_log.quantity, "
+                        "product_log.received, "
+                        "product_log.packed, "
+                        "product_log.expiration, "
+                        "product_log.notes, "
+                        "product_log.modified_by "
+                        "FROM product_log GROUP BY warehouse_id, bin_id "
+                        "ORDER BY changed_on DESC")) {
+            qDebug() << query.lastError().text();
+        }
+        // Warehouse View
+        if (!query.exec("CREATE VIEW IF NOT EXISTS warehouse_view AS SELECT "
+                        "(SELECT id FROM warehouse WHERE id=warehouse_id) AS 'WarehouseID', "
+                        "(SELECT code FROM warehouse WHERE id=warehouse_id) AS 'Warehouse Code', "
+                        "product.id AS 'ProductID', "
+                        "(SELECT id FROM bin WHERE id=bin_id) AS 'BinID', "
+                        "kit_sku AS 'SKU',  "
+                        "(SELECT description FROM kit WHERE sku=kit_sku) AS 'Description' , "
+                        "quantity, "
+                        "received, "
+                        "packed, "
+                        "modified_by, "
+                        "(SELECT slot FROM bin WHERE id=bin_id) AS 'Slot', "
+                        "notes "
+                        "FROM product "
+                        "GROUP BY ProductID "
+                        "ORDER BY expiration,slot")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product_Log Insert Trigger
+        if (!query.exec("CREATE TRIGGER IF NOT EXISTS product_log_insert "
+                        "AFTER INSERT ON product "
+                        "BEGIN "
+                        "INSERT INTO product_log "
+                        "(type, product_id, warehouse_id, bin_id, kit_sku, quantity, "
+                        "received, packed, expiration, notes, modified, modified_by) "
+                        "VALUES ( 'insert', NEW.id, NEW.warehouse_id,  "
+                        "NEW.bin_id, NEW.kit_sku, NEW.quantity, "
+                        "NEW.received, NEW.packed, NEW.expiration, "
+                        "NEW.notes, NEW.modified, NEW.modified_by); "
+                        "END")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product_Log Delete Trigger
+        if (!query.exec("CREATE TRIGGER IF NOT EXISTS product_log_delete "
+                        "AFTER DELETE ON product "
+                        "BEGIN INSERT INTO product_log "
+                        "(type, product_id, warehouse_id, bin_id, kit_sku, quantity, "
+                        "received, packed, expiration, notes, modified, modified_by) "
+                        "VALUES ( 'delete', OLD.id, OLD.warehouse_id, "
+                        "OLD.bin_id, OLD.kit_sku, OLD.quantity, "
+                        "OLD.received, OLD.packed, OLD.expiration, "
+                        "OLD.notes, OLD.modified, OLD.modified_by); "
+                        "END")) {
+            qDebug() << query.lastError().text();
+        }
+        // Product_Log Update Trigger
+        if (!query.exec("CREATE TRIGGER IF NOT EXISTS product_log_update "
+                        "AFTER UPDATE ON product "
+                        "BEGIN "
+                        "INSERT INTO product_log "
+                        "(type, product_id, warehouse_id, bin_id, kit_sku, quantity, "
+                        "received, packed, expiration, notes, modified, modified_by) "
+                        "VALUES ( 'update_before', OLD.id, OLD.warehouse_id,  "
+                        "OLD.bin_id, OLD.kit_sku, OLD.quantity, "
+                        "OLD.received, OLD.packed, OLD.expiration, "
+                        "OLD.notes, OLD.modified, OLD.modified_by); "
+                        " "
+                        "INSERT INTO product_log "
+                        "(type, product_id, warehouse_id, bin_id, kit_sku, quantity, "
+                        "received, packed, expiration, notes, modified, modified_by) "
+                        "VALUES ( 'update_after', NEW.id, NEW.warehouse_id,  "
+                        "NEW.bin_id, NEW.kit_sku, NEW.quantity, "
+                        "NEW.received, NEW.packed, NEW.expiration, "
+                        "NEW.notes, NEW.modified, NEW.modified_by); "
+                        "END")) {
+            qDebug() << query.lastError().text();
+        }
+        db.close();
+    }
+    return true;
+}
 
-    qDebug() << "TODO(barron): Add 'Create table if not exists' for initDatabase()";
+bool initDatabase(QSqlDatabase &db)
+{
+    setupDatabaseTables(db);
 
     if (db.open()) {
         QSqlQuery query;

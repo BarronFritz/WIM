@@ -24,6 +24,7 @@ namespace database {
 QString getLastExecutedQuery(const QSqlQuery& query);
 }
 
+bool setupDatabaseTables(QSqlDatabase &db);
 bool initDatabase(QSqlDatabase &db);
 
 bool addProduct(QSqlDatabase &db, Product &product, sLogin login = sLogin());

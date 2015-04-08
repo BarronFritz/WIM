@@ -5,13 +5,14 @@
 #-------------------------------------------------
 
 QT       += core gui sql
+CONFIG   += c++11
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = InvManager
 TEMPLATE = app
 
-CONFIG += c++11
+QMAKE_CXXFLAGS+="-Wno-ignored-qualifiers -Wno-unused-parameter -Wno-unused-variable"
 
 RC_FILE = appIco.rc
 
@@ -19,10 +20,10 @@ CONFIG(debug,debug|release) {
     DEFINES += DEBUG_MODE
 }
 
-INCLUDEPATH += "C:\Documents and Settings\shipping.FMMI\Desktop\InvManager\include"
-DEPENDPATH += "C:\Documents and Settings\shipping.FMMI\Desktop\InvManager\include"
+INCLUDEPATH += "$$PWD\include"
+DEPENDPATH += "$$PWD\include"
 
-LIBS += "-LC:\Documents and Settings\shipping.FMMI\Desktop\InvManager\bin"
+LIBS += "-L$$PWD\bin"
 LIBS += "-lLepton"
 
 SOURCES += main.cpp\
@@ -66,3 +67,9 @@ RESOURCES += \
 
 DISTFILES += \
     appIco.rc
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Lepton/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/release/ -lLepton
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Lepton/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/debug/ -lLepton
+
+INCLUDEPATH += $$PWD/../../Lepton/Lepton/include
+DEPENDPATH += $$PWD/../../Lepton/Lepton/include

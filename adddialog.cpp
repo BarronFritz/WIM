@@ -332,7 +332,8 @@ void AddDialog::on_pushButton_ok_clicked()
                              QMessageBox::Ok);
         return;
     } else {
-        if (product.kit.sku.isEmpty() && product.notes.isEmpty());
+        if (product.kit.sku.isEmpty() && product.notes.isEmpty())
+            return;
     }
 
     bool yesToAll{false};
