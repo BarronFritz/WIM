@@ -37,7 +37,8 @@ SOURCES += main.cpp\
     database.cpp \
     admindialog.cpp \
     newlogindialog.cpp \
-    addwarehousedialog.cpp
+    addwarehousedialog.cpp \
+    addlotdialog.cpp
 
 HEADERS  += mainwindow.h \
     adddialog.h \
@@ -50,7 +51,8 @@ HEADERS  += mainwindow.h \
     database.h \
     admindialog.h \
     newlogindialog.h \
-    addwarehousedialog.h
+    addwarehousedialog.h \
+    addlotdialog.h
 
 FORMS    += mainwindow.ui \
     adddialog.ui \
@@ -60,7 +62,8 @@ FORMS    += mainwindow.ui \
     itemselectdialog.ui \
     admindialog.ui \
     newlogindialog.ui \
-    addwarehousedialog.ui
+    addwarehousedialog.ui \
+    addlotdialog.ui
 
 RESOURCES += \
     icons.qrc
@@ -68,8 +71,8 @@ RESOURCES += \
 DISTFILES += \
     appIco.rc
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Lepton/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/release/ -lLepton
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Lepton/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/debug/ -lLepton
+win32:CONFIG(release, debug|release): LIBS += -L"$$PWD/libs/Lepton 1.3/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/release/" -lLepton
+else:win32:CONFIG(debug, debug|release): LIBS += -L"$$PWD/libs/Lepton 1.3/build-Lepton-Desktop_Qt_5_4_0_MinGW_32bit-Release/debug/" -lLepton
 
 INCLUDEPATH += $$PWD/../../Lepton/Lepton/include
 DEPENDPATH += $$PWD/../../Lepton/Lepton/include

@@ -328,7 +328,9 @@ void MainWindow::updateWHSEView(QString searchString)
         if (query.prepare("SELECT * FROM warehouse_view "
                           "WHERE " + searchMode + " LIKE :value")) {
 
-            searchString.prepend('%');
+            if (searchMode.toUpper() != QString("slot").toUpper()) {
+                searchString.prepend('%');
+            }
             searchString.append('%');
             query.bindValue(":value", searchString);
 

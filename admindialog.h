@@ -12,6 +12,7 @@
 #include "database.h"
 #include "utility.h"
 #include "addwarehousedialog.h"
+#include "addlotdialog.h"
 
 namespace Ui {
 class AdminDialog;
@@ -61,8 +62,12 @@ private slots:
     void on_pushButton_warehouse_remove_clicked();
 
     void on_comboBox_slot_warehouse_activated(int index);
-
     void on_tableView_slot_doubleClicked(const QModelIndex &index);
+
+    void on_lineEdit_lot_search_textEdited(const QString &arg1);
+    void on_pushButton_lot_add_clicked();
+    void on_pushButton_lot_remove_clicked();
+    void on_tableView_lots_clicked(const QModelIndex &index);
 
 private:
     Ui::AdminDialog *ui;
@@ -71,6 +76,7 @@ private:
     QSqlTableModel *loginModel;
     QSqlQueryModel *logModel, *slotModel, *kitModel;
     QSqlQueryModel *iikModel, *itemModel, *warehouseModel;
+    QSqlQueryModel *lotModel;
 
     struct ProductLog{
         int id;
@@ -84,6 +90,7 @@ private:
     Kit selectedItemInKit;
     Item selectedItem;
     Warehouse selectedWarehouse;
+    Lot selectedLot;
 
     void tryRemoveSlot(QString slot, Warehouse warehouse);
     void refreshItemsInKit();

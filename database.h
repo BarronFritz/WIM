@@ -55,4 +55,7 @@ bool slotExists(QSqlDatabase &db, QString slot, Warehouse warehouse);
 
 bool addSlot(QSqlDatabase &db, QString slot, Warehouse warehouse);
 bool removeSlot(QSqlDatabase &db, QString slot, Warehouse warehouse);
+
+bool addLot(QSqlDatabase &db, Lot lot);
+bool removeLot(QSqlDatabase &db, int id);
 #endif // DATABASE_H

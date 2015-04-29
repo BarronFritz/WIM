@@ -977,3 +977,59 @@ bool removeSlot(QSqlDatabase &db, QString slot, Warehouse warehouse)
     }
     return result;
 }
+
+
+bool addLot(QSqlDatabase &db, Lot lot)
+{
+    bool result{false};
+    if (db.open()) {
+        QSqlQuery query;
+        if (query.prepare("INSERT INTO lot (code, production, expiration, description) "
+                          "VALUES( :CODE , :PROD , :EXP , :DESC )")) {
+            query.bindValue(":CODE", lot.code);
+            query.bindValue(":PROD", lot.production);
+            query.bindValue(":EXP", lot.expiration);
+            query.bindValue(":DESC", lot.description);
+            if (query.exec()) {
+                result = true;
+            } else {
+                qDebug() << query.lastError().text();
+                qDebug() << database::getLastExecutedQuery(query);
+            }
+        } else {
+            qDebug() << query.lastError().text();
+            qDebug() << database::getLastExecutedQuery(query);
+        }
+        db.close();
+    } else {
+        qDebug() << db.lastError().text();
+        qDebug() << "Failed to open database.";
+    }
+    return result;
+}
+
+
+bool removeLot(QSqlDatabase &db, int id)
+{
+    bool result{false};
+    if (db.open()) {
+        QSqlQuery query;
+        if (query.prepare("DELETE FROM lot WHERE id = :ID")) {
+            query.bindValue(":ID", id);
+            if (query.exec()) {
+                result = true;
+            } else {
+                qDebug() << query.lastError().text();
+                qDebug() << database::getLastExecutedQuery(query);
+            }
+        } else {
+            qDebug() << query.lastError().text();
+            qDebug() << database::getLastExecutedQuery(query);
+        }
+        db.close();
+    } else {
+        qDebug() << db.lastError().text();
+        qDebug() << "Failed to open database.";
+    }
+    return result;
+}

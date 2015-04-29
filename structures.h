@@ -127,4 +127,12 @@ struct Product {
     }
 };
 
+struct Lot {
+    int id;
+    QString code;
+    QDate production;
+    QDate expiration;
+    QString description;
+};
+
 #endif // STRUCTURES_H

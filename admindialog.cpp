@@ -20,6 +20,7 @@ AdminDialog::AdminDialog(QSqlDatabase &db, sLogin login, QWidget *parent) :
     iikModel = new QSqlQueryModel(this);
     itemModel = new QSqlQueryModel(this);
     warehouseModel = new QSqlQueryModel(this);
+    lotModel = new QSqlQueryModel(this);
 
     // ui->lineEdit_slot_slot->setValidator(new QRegExpValidator(regex::slot(),this));
 
@@ -128,6 +129,20 @@ AdminDialog::AdminDialog(QSqlDatabase &db, sLogin login, QWidget *parent) :
         ui->tableView_product_items->hideColumn(0); // Hide 'id'
         ui->tableView_product_items->show();
         ui->tableView_product_items->resizeColumnsToContents();
+
+        // LOTS
+        lotModel->setQuery("SELECT * FROM lot");
+        while (lotModel->canFetchMore()) {
+            lotModel->fetchMore();
+        }
+        lotModel->setHeaderData(1, Qt::Horizontal, tr("Lot Code"));
+        lotModel->setHeaderData(2, Qt::Horizontal, tr("Production Date"));
+        lotModel->setHeaderData(3, Qt::Horizontal, tr("Expiration Date"));
+        lotModel->setHeaderData(4, Qt::Horizontal, tr("Description"));
+        ui->tableView_lots->setModel(lotModel);
+        ui->tableView_lots->hideColumn(0); // Hide 'id'
+        ui->tableView_lots->show();
+        ui->tableView_lots->resizeColumnsToContents();
     }
 
     ui->label_log_queryText->setText("");
@@ -788,4 +803,53 @@ void AdminDialog::on_comboBox_slot_warehouse_activated(int index)
 void AdminDialog::on_tableView_slot_doubleClicked(const QModelIndex &index)
 {
     ui->lineEdit_slot_slot->setText(index.sibling(index.row(), 0).data().toString());
+}
+
+void AdminDialog::on_lineEdit_lot_search_textEdited(const QString &arg1)
+{
+    // Filter tableView_logs
+    if(db.open()) {
+        lotModel->setQuery("SELECT id, code, production, expiration, description "
+                           "FROM lot WHERE description LIKE "
+                            + arg1.toUpper() + "%' or CODE LIKE "
+                            + arg1.toUpper() + " ORDER BY production");
+        ui->tableView_lots->hideColumn(0); // Hide 'id'
+    }
+}
+
+void AdminDialog::on_pushButton_lot_add_clicked()
+{
+    // Get new warehouse for DB
+    AddLotDialog dialog(this, db);
+    // if result acceptable
+    if (dialog.exec() == AddLotDialog::Accepted) {
+        db.open();
+        lotModel->setQuery("SELECT * FROM lot");
+        db.close();
+    }
+}
+
+void AdminDialog::on_pushButton_lot_remove_clicked()
+{
+    if (QMessageBox::question(this, "Remove Selected Lot Code?",
+                              "Are you sure you want to remove this lot code "
+                              "from the list?\nCode: " + selectedLot.code +
+                              "\nDescription: " + selectedLot.description,
+                              QMessageBox::No,
+                              QMessageBox::Yes) == QMessageBox::Yes) {
+        if (removeLot(db, selectedLot.id)) {
+            db.open();
+            lotModel->setQuery("SELECT * FROM lot");
+            db.close();
+        }
+    }
+}
+
+void AdminDialog::on_tableView_lots_clicked(const QModelIndex &index)
+{
+    selectedLot.id = index.sibling(index.row(),0).data().toInt();
+    selectedLot.code = index.sibling(index.row(), 1).data().toString();
+    selectedLot.production = index.sibling(index.row(), 2).data().toDate();
+    selectedLot.expiration = index.sibling(index.row(), 3).data().toDate();
+    selectedLot.description = index.sibling(index.row(), 4).data().toString();
 }
